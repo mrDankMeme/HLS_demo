@@ -8,8 +8,8 @@ struct DemoApp: App {
             NavigationStack {
                 // Вариант для быстрой проверки гипотезы:
                 // nil → автоматически найдём и запустим первый полностью открытый ролик
-                SingleVideoView(videoID: nil)
-
+                //SingleVideoView(videoID: nil)
+                ReelsView()
                 // или, если хочешь принудительно:
                 // SingleVideoView(videoID: 52)
             }
