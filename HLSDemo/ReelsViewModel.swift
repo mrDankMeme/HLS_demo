@@ -7,7 +7,6 @@ final class ReelsViewModel: ObservableObject {
     @Published var items: [VideoRecommendation] = []
     @Published var activeVideoID: Int?
 
-    // общий плеер
     let player = AVPlayer()
 
     private let repo: VideoRepository = DefaultVideoRepository(client: DefaultHTTPClient())
@@ -21,7 +20,6 @@ final class ReelsViewModel: ObservableObject {
         itemCancellables.removeAll()
     }
 
-    // Загружаем ленту
     func load() async {
         do {
             let recs = try await repo.fetchRecommendations(offset: 0, limit: 30)
@@ -29,38 +27,32 @@ final class ReelsViewModel: ObservableObject {
             if let first = recs.first {
                 setActive(videoID: first.video_id)
             }
-        } catch {
-            print("reels load error:", error)
-        }
+        } catch { print("reels load error:", error) }
     }
 
-    // Установка активного клипа
     func setActive(videoID: Int, mute: Bool = true) {
         guard activeVideoID != videoID else { return }
         activeVideoID = videoID
         play(videoID: videoID, mute: mute)
     }
 
-    // Проиграть конкретный id в общем плеере (с автоплеем и репитом)
     func play(videoID: Int, mute: Bool = true) {
-        guard lastPlayedID != videoID else { return }         // важное: не пересоздаём тот же item
+        guard lastPlayedID != videoID else { return }
         lastPlayedID = videoID
 
         let url   = InteresnoAPI.hlsPlaylistURL(videoID: videoID)
         let asset = AVURLAsset(url: url)
         let item  = AVPlayerItem(asset: asset)
 
-        // буфер/битрейт
         player.automaticallyWaitsToMinimizeStalling = false
         item.preferredForwardBufferDuration = 0.8
 
-        player.replaceCurrentItem(with: item)                 // старое видео автоматически останавливается
+        player.replaceCurrentItem(with: item)
         player.currentItem?.preferredPeakBitRate = 1_200_000
         player.preventsDisplaySleepDuringVideoPlayback = true
         player.allowsExternalPlayback = false
         player.isMuted = mute
 
-        // первая попытка — если рано, Combine добьёт
         player.playImmediately(atRate: 1.0)
 
         attachItemAutoplayObservers(for: item)
@@ -68,7 +60,6 @@ final class ReelsViewModel: ObservableObject {
         attachLoop(for: item)
     }
 
-    // Репит через seek к нулю
     private func attachLoop(for item: AVPlayerItem) {
         NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: item)
             .receive(on: RunLoop.main)
@@ -81,19 +72,15 @@ final class ReelsViewModel: ObservableObject {
             .store(in: &itemCancellables)
     }
 
-    // Автоплей — Combine вместо KVO
     private func attachItemAutoplayObservers(for item: AVPlayerItem) {
         itemCancellables.removeAll()
 
         item.publisher(for: \.status)
             .receive(on: RunLoop.main)
-            .sink { [weak self] status in
+            .sink { [weak self] st in
                 guard let self else { return }
-                if status == .readyToPlay {
-                    self.player.playImmediately(atRate: 1.0)
-                }
-            }
-            .store(in: &itemCancellables)
+                if st == .readyToPlay { self.player.playImmediately(atRate: 1.0) }
+            }.store(in: &itemCancellables)
 
         item.publisher(for: \.isPlaybackLikelyToKeepUp)
             .removeDuplicates()
@@ -101,18 +88,14 @@ final class ReelsViewModel: ObservableObject {
             .sink { [weak self] keepUp in
                 guard let self, keepUp else { return }
                 self.player.playImmediately(atRate: 1.0)
-            }
-            .store(in: &itemCancellables)
+            }.store(in: &itemCancellables)
 
         NotificationCenter.default.publisher(for: .AVPlayerItemPlaybackStalled, object: item)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.player.playImmediately(atRate: 1.0)
-            }
+            .sink { [weak self] _ in self?.player.playImmediately(atRate: 1.0) }
             .store(in: &itemCancellables)
     }
 
-    // Диагностика (опционально)
     private func attachDiagnosticsIfNeeded() {
         guard timeObserver == nil else { return }
         timeObserver = player.addPeriodicTimeObserver(
