@@ -1,4 +1,10 @@
-// App/Infrastructure/Repositories/VideoRepository.swift
+//
+//  VideoRepository.swift
+//  HLSDemo2
+//
+//  Created by Niiaz Khasanov on 10/17/25.
+//
+
 import Foundation
 
 public protocol VideoRepository {
@@ -9,9 +15,7 @@ public final class DefaultVideoRepository: VideoRepository {
     private let client: HTTPClient
     public init(client: HTTPClient) { self.client = client }
 
-    private struct RecResponse: Decodable {
-        let items: [VideoRecommendation]
-    }
+    private struct RecResponse: Decodable { let items: [VideoRecommendation] }
 
     public func fetchRecommendations(offset: Int, limit: Int) async throws -> [VideoRecommendation] {
         let url = InteresnoAPI.recommendationsURL(offset: offset, limit: limit)

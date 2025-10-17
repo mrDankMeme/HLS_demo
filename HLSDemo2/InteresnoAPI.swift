@@ -1,4 +1,10 @@
-// App/Infrastructure/API/InteresnoAPI.swift
+//
+//  InteresnoAPI.swift
+//  HLSDemo2
+//
+//  Created by Niiaz Khasanov on 10/17/25.
+//
+
 import Foundation
 
 public enum InteresnoAPI {
@@ -17,7 +23,9 @@ public enum InteresnoAPI {
             .init(name: "category", value: "shorts"),
             .init(name: "date_filter_type", value: "created"),
             .init(name: "sort_by", value: "date_created"),
-            .init(name: "sort_order", value: "desc")
+            .init(name: "sort_order", value: "desc"),
+            .init(name: "is_free", value: "true"),
+            .init(name: "auth_required", value: "false")
         ]
         return comps.url!
     }
