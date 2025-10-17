@@ -1,0 +1,319 @@
+// App/Domain/Models/VideoRecommendation.swift
+import Foundation
+
+public struct VideoRecommendation: Identifiable, Decodable {
+    public var id: Int { video_id }
+    public let video_id: Int
+    public let title: String
+    public let preview_image: String?
+    public let duration_sec: Int?
+    public let numbers_views: Int?
+    public let free: Bool?                 // ← добавили
+    public let time_not_reg: Int?          // ← добавили (null → nil)
+    public let has_access: Bool?           // (на будущее)
+}
+import SwiftUI
+import AVFoundation
+
+struct SingleVideoView: View {
+    @StateObject private var vm = SingleVideoViewModel()
+    /// nil → автоматически найдём первый полностью открытый ролик
+    let videoID: Int?
+
+    var body: some View {
+        VStack {
+            PlayerViewRepresentable(player: vm.player, showsControls: true, fill: true)
+                .task {
+                    configureAudioSessionForPlayback()
+                    if let id = videoID {
+                        vm.loadAndPlay(videoID: id, mute: true)
+                    } else {
+                        await vm.loadFirstFreeAndPlay(mute: true)
+                    }
+                }
+
+            HStack {
+                Button(vm.isPlaying ? "Pause" : "Play") {
+                    if vm.isPlaying {
+                        vm.pause()
+                    } else {
+                        vm.player.playImmediately(atRate: 1.0)
+                        vm.isPlaying = true
+                    }
+                }
+                .buttonStyle(.bordered)
+
+                Button(vm.player.isMuted ? "Unmute" : "Mute") {
+                    vm.player.isMuted.toggle()
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+        }
+        .navigationTitle(videoID != nil ? "HLS #\(videoID!)" : "HLS (first free)")
+    }
+}
+import Foundation
+import Combine
+import AVFoundation
+
+@MainActor
+final class SingleVideoViewModel: ObservableObject {
+    @Published var isPlaying = false
+    let player = AVPlayer()
+
+    private let repo: VideoRepository = DefaultVideoRepository(client: DefaultHTTPClient())
+
+    // удерживаем подписки для ТЕКУЩЕГО item
+    private var itemCancellables = Set<AnyCancellable>()
+    private var timeObserver: Any?
+
+    deinit {
+        if let obs = timeObserver { player.removeTimeObserver(obs) }
+        NotificationCenter.default.removeObserver(self)
+        itemCancellables.removeAll()
+    }
+
+    // MARK: - Public
+
+    func loadAndPlay(videoID: Int, mute: Bool = true) {
+        let url   = InteresnoAPI.hlsPlaylistURL(videoID: videoID)
+        let asset = AVURLAsset(url: url)
+        let item  = AVPlayerItem(asset: asset)
+
+        // Настройка буфера/битрейта
+        player.automaticallyWaitsToMinimizeStalling = false
+        item.preferredForwardBufferDuration = 0.8
+        player.replaceCurrentItem(with: item)
+        player.currentItem?.preferredPeakBitRate = 1_200_000
+        player.preventsDisplaySleepDuringVideoPlayback = true
+        player.allowsExternalPlayback = false
+
+        player.isMuted = mute
+
+        // Сразу пытаемся — если не готов, Combine добьёт позже
+        player.playImmediately(atRate: 1.0)
+        isPlaying = true
+
+        attachItemAutoplayObservers(for: item)  // <<< ключ к автоплею
+        attachDiagnostics()
+        attachStallRecovery()
+    }
+
+    func loadFirstFreeAndPlay(mute: Bool = true) async {
+        do {
+            let items = try await repo.fetchRecommendations(offset: 0, limit: 20)
+            if let v = items.first(where: { ($0.free ?? false) && $0.time_not_reg == nil }) {
+                loadAndPlay(videoID: v.video_id, mute: mute)
+            } else if let any = items.first {
+                loadAndPlay(videoID: any.video_id, mute: mute)
+            }
+        } catch {
+            debugPrint("fetch recommendations error:", error.localizedDescription)
+        }
+    }
+
+    func pause() {
+        player.pause()
+        isPlaying = false
+    }
+
+    // MARK: - Autoplay glue (Combine вместо KVO)
+
+    private func attachItemAutoplayObservers(for item: AVPlayerItem) {
+        // Сбрасываем старые подписки, чтобы не текли
+        itemCancellables.removeAll()
+
+        // 1) Как только статус стал готов — жмём playImmediately
+        item.publisher(for: \.status)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] status in
+                guard let self else { return }
+                if status == .readyToPlay {
+                    self.player.playImmediately(atRate: 1.0)
+                }
+            }
+            .store(in: &itemCancellables)
+
+        // 2) Буфер «скорее всего не будет заикаться» — тоже жмём playImmediately
+        item.publisher(for: \.isPlaybackLikelyToKeepUp)
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] keepUp in
+                guard let self, keepUp else { return }
+                self.player.playImmediately(atRate: 1.0)
+            }
+            .store(in: &itemCancellables)
+
+        // 3) На случай внешних стопов — повторная попытка
+        NotificationCenter.default.publisher(for: .AVPlayerItemPlaybackStalled, object: item)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.player.playImmediately(atRate: 1.0)
+            }
+            .store(in: &itemCancellables)
+
+        NotificationCenter.default.publisher(for: .AVPlayerItemFailedToPlayToEndTime, object: item)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.player.playImmediately(atRate: 1.0)
+            }
+            .store(in: &itemCancellables)
+    }
+
+    // MARK: - Diagnostics (лайтово)
+
+    private func attachDiagnostics() {
+        guard timeObserver == nil else { return }
+        timeObserver = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 0.5, preferredTimescale: 600),
+            queue: .main
+        ) { [weak self] t in
+            guard let self else { return }
+            let status: String
+            switch self.player.timeControlStatus {
+            case .paused: status = "paused"
+            case .waitingToPlayAtSpecifiedRate: status = "waiting"
+            case .playing: status = "playing"
+            @unknown default: status = "unknown"
+            }
+            let reason = self.player.reasonForWaitingToPlay?.rawValue ?? "nil"
+            debugPrint(String(format: "⏱ %.2f s, status=%@, reason=%@", t.seconds, status, reason))
+        }
+    }
+
+    private func attachStallRecovery() {
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemPlaybackStalled,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.player.playImmediately(atRate: 1.0)
+        }
+    }
+}
+// App/App.swift
+import SwiftUI
+
+@main
+struct DemoApp: App {
+    var body: some Scene {
+        WindowGroup {
+            NavigationStack {
+                // Вариант для быстрой проверки гипотезы:
+                // nil → автоматически найдём и запустим первый полностью открытый ролик
+                SingleVideoView(videoID: nil)
+
+                // или, если хочешь принудительно:
+                // SingleVideoView(videoID: 52)
+            }
+        }
+    }
+}
+// App/Infrastructure/Repositories/VideoRepository.swift
+import Foundation
+
+public protocol VideoRepository {
+    func fetchRecommendations(offset: Int, limit: Int) async throws -> [VideoRecommendation]
+}
+
+public final class DefaultVideoRepository: VideoRepository {
+    private let client: HTTPClient
+    public init(client: HTTPClient) { self.client = client }
+
+    private struct RecResponse: Decodable {
+        let items: [VideoRecommendation]
+    }
+
+    public func fetchRecommendations(offset: Int, limit: Int) async throws -> [VideoRecommendation] {
+        let url = InteresnoAPI.recommendationsURL(offset: offset, limit: limit)
+        let (data, http) = try await client.get(url: url)
+        guard (200..<300).contains(http.statusCode) else { throw URLError(.badServerResponse) }
+        return try JSONDecoder().decode(RecResponse.self, from: data).items
+    }
+}
+// App/Core/Networking/HTTPClient.swift
+import Foundation
+
+public protocol HTTPClient {
+    func get(url: URL) async throws -> (Data, HTTPURLResponse)
+}
+
+public final class DefaultHTTPClient: HTTPClient {
+    private let session: URLSession
+    public init(session: URLSession = .shared) { self.session = session }
+
+    public func get(url: URL) async throws -> (Data, HTTPURLResponse) {
+        let (data, resp) = try await session.data(from: url)
+        guard let http = resp as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        return (data, http)
+    }
+}
+import SwiftUI
+import AVKit
+import AVFAudio
+
+// VC, который дожимает автоплей, когда контроллер уже на экране
+final class AutoplayPlayerViewController: AVPlayerViewController {
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        player?.playImmediately(atRate: 1.0)
+    }
+}
+
+struct PlayerViewRepresentable: UIViewControllerRepresentable {
+    let player: AVPlayer
+    var showsControls: Bool = true
+    var fill: Bool = true
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let vc = AutoplayPlayerViewController()
+        vc.player = player
+        vc.showsPlaybackControls = showsControls
+        vc.videoGravity = fill ? .resizeAspectFill : .resizeAspect
+        vc.allowsPictureInPicturePlayback = false
+        vc.canStartPictureInPictureAutomaticallyFromInline = false
+        vc.updatesNowPlayingInfoCenter = false
+        return vc
+    }
+
+    func updateUIViewController(_ ui: AVPlayerViewController, context: Context) {
+        if ui.player !== player { ui.player = player }
+    }
+}
+
+// Можно вызывать один раз при старте, если нужен звук
+func configureAudioSessionForPlayback() {
+    do {
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
+        try AVAudioSession.sharedInstance().setActive(true)
+    } catch {
+        print("AudioSession error:", error)
+    }
+}
+// App/Infrastructure/API/InteresnoAPI.swift
+import Foundation
+
+public enum InteresnoAPI {
+    public static let base = URL(string: "https://interesnoitochka.ru/api/v1")!
+
+    public static func hlsPlaylistURL(videoID: Int) -> URL {
+        base.appendingPathComponent("videos/video/\(videoID)/hls/playlist.m3u8")
+    }
+
+    public static func recommendationsURL(offset: Int = 0, limit: Int = 20) -> URL {
+        var comps = URLComponents(url: base.appendingPathComponent("videos/recommendations"),
+                                  resolvingAgainstBaseURL: false)!
+        comps.queryItems = [
+            .init(name: "offset", value: String(offset)),
+            .init(name: "limit", value: String(limit)),
+            .init(name: "category", value: "shorts"),
+            .init(name: "date_filter_type", value: "created"),
+            .init(name: "sort_by", value: "date_created"),
+            .init(name: "sort_order", value: "desc")
+        ]
+        return comps.url!
+    }
+}
