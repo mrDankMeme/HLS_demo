@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A3DC83092EA3CA4600D376FE /* GCDWebServer in Frameworks */ = {isa = PBXBuildFile; productRef = A3DC83082EA3CA4600D376FE /* GCDWebServer */; };
+		A3DC830C2EA3CAAF00D376FE /* Cache in Frameworks */ = {isa = PBXBuildFile; productRef = A3DC830B2EA3CAAF00D376FE /* Cache */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		A352EDC72EA27D620011B9D6 /* HLSDemo2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HLSDemo2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3DC83092EA3CA4600D376FE /* GCDWebServer in Frameworks */,
+				A3DC830C2EA3CAAF00D376FE /* Cache in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +72,8 @@
 			);
 			name = HLSDemo2;
 			packageProductDependencies = (
+				A3DC83082EA3CA4600D376FE /* GCDWebServer */,
+				A3DC830B2EA3CAAF00D376FE /* Cache */,
 			);
 			productName = HLSDemo2;
 			productReference = A352EDC72EA27D620011B9D6 /* HLSDemo2.app */;
@@ -94,6 +103,10 @@
 			);
 			mainGroup = A352EDBE2EA27D620011B9D6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A3DC83072EA3CA4600D376FE /* XCRemoteSwiftPackageReference "GCDWebServer" */,
+				A3DC830A2EA3CAAF00D376FE /* XCRemoteSwiftPackageReference "Cache" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A352EDC82EA27D620011B9D6 /* Products */;
 			projectDirPath = "";
@@ -332,6 +345,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A3DC83072EA3CA4600D376FE /* XCRemoteSwiftPackageReference "GCDWebServer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/yene/GCDWebServer";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.5.7;
+			};
+		};
+		A3DC830A2EA3CAAF00D376FE /* XCRemoteSwiftPackageReference "Cache" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hyperoslo/Cache";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A3DC83082EA3CA4600D376FE /* GCDWebServer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3DC83072EA3CA4600D376FE /* XCRemoteSwiftPackageReference "GCDWebServer" */;
+			productName = GCDWebServer;
+		};
+		A3DC830B2EA3CAAF00D376FE /* Cache */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3DC830A2EA3CAAF00D376FE /* XCRemoteSwiftPackageReference "Cache" */;
+			productName = Cache;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A352EDBF2EA27D620011B9D6 /* Project object */;
 }

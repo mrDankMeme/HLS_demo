@@ -57,7 +57,7 @@ final class ReelCell: UICollectionViewCell {
 
     func configure(title: String, previewURL: URL?) {
         titleLabel.text = title
-     //   ImageLoader.shared.setImage(on: posterView, url: previewURL)
+        ImageLoader.shared.setImage(on: posterView, url: previewURL)
     }
 
     /// Размещаем playerView поверх постера и под заголовком.
