@@ -8,7 +8,7 @@
 import Foundation
 import AVFoundation
 
-/// Лёгкий преподгрев: заранее грузим плейлисты (manifest) для соседних видео.
+
 final class ReelsPreheater {
     private var cache: [Int: AVURLAsset] = [:]
     private var order: [Int] = []

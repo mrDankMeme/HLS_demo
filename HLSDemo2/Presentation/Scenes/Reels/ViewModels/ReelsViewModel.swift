@@ -5,6 +5,7 @@
 //  Created by Niiaz Khasanov on 10/17/25.
 //
 
+
 import Foundation
 import Combine
 import AVFoundation
@@ -25,11 +26,14 @@ final class ReelsViewModel: ObservableObject {
     private var timeObserver: Any?
     private var lastLoadedID: Int?
 
+    private let lastIDKey = "reels.lastActiveVideoID"
+
     init(repo: VideoRepository, player: AVPlayer = AVPlayer()) {
         self.repo = repo
         self.player = player
         bindAppLifecycle()
         attachDiagnosticsIfNeeded()
+        if let saved = readLastID() { activeVideoID = saved }
     }
 
     deinit {
@@ -44,23 +48,28 @@ final class ReelsViewModel: ObservableObject {
             let recs = try await repo.fetchRecommendations(offset: 0, limit: 40)
             let playable = recs.filter { ($0.has_access ?? false) || (($0.free ?? false) && $0.time_not_reg == nil) }
             self.items = playable
-            if let first = playable.first { setActive(videoID: first.video_id) }
+
+            let preferredID: Int? = {
+                if let saved = readLastID(),
+                   playable.contains(where: { $0.video_id == saved }) { return saved }
+                return playable.first?.video_id
+            }()
+
+            if let id = preferredID {
+                setActive(videoID: id)
+            }
         } catch {
             print("reels load error:", error)
         }
     }
 
-    /// Активируем ролик: СНАЧАЛА подменяем item, ПОТОМ публикуем id.
     func setActive(videoID: Int, mute: Bool = true) {
         guard activeVideoID != videoID else { return }
 
-        // 1) подготовка и замена текущего item
         prepareAndAutoplay(videoID: videoID, mute: mute)
-
-        // 2) публикация id (VC приклеит уже к нужной ячейке)
         activeVideoID = videoID
+        writeLastID(videoID)
 
-        // 3) преподогрев соседей
         if let idx = items.firstIndex(where: { $0.video_id == videoID }) {
             preheater.warmNeighbors(currentIndex: idx, items: items)
         }
@@ -84,7 +93,6 @@ final class ReelsViewModel: ObservableObject {
         attachObservers(for: item)
         attachLoop(for: item)
 
-        // Сразу жмём play — система сама дождётся буфера
         startPlaybackIfNeeded()
         kickstartIfNoProgress()
     }
@@ -106,10 +114,7 @@ final class ReelsViewModel: ObservableObject {
 
         player.publisher(for: \.timeControlStatus)
             .removeDuplicates()
-            .sink { status in
-                // можно добавить логику по статусу, если нужно
-                _ = status
-            }
+            .sink { _ in }
             .store(in: &itemCancellables)
     }
 
@@ -120,7 +125,6 @@ final class ReelsViewModel: ObservableObject {
     }
 
     private func kickstartIfNoProgress() {
-        // через ~1.5 сек если всё ещё не играет — повторим play()
         Just(())
             .delay(for: .seconds(1.5), scheduler: RunLoop.main)
             .sink { [weak self] _ in
@@ -132,7 +136,6 @@ final class ReelsViewModel: ObservableObject {
             .store(in: &itemCancellables)
     }
 
-    // MARK: - App lifecycle
     private func bindAppLifecycle() {
         NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
             .sink { [weak self] _ in self?.player.pause() }
@@ -158,7 +161,15 @@ final class ReelsViewModel: ObservableObject {
                 @unknown default: return "unknown"
                 }
             }()
-            print(String(format: "reels ⏱ %.2f s | %@", t.seconds, st))
+            print(String(format: "reels %.2f s | %@", t.seconds, st))
         }
+    }
+
+    private func readLastID() -> Int? {
+        UserDefaults.standard.object(forKey: lastIDKey) as? Int
+    }
+
+    private func writeLastID(_ id: Int) {
+        UserDefaults.standard.set(id, forKey: lastIDKey)
     }
 }

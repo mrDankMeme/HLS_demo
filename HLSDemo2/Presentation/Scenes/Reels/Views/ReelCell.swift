@@ -60,7 +60,7 @@ final class ReelCell: UICollectionViewCell {
         ImageLoader.shared.setImage(on: posterView, url: previewURL)
     }
 
-    /// Размещаем playerView поверх постера и под заголовком.
+    
     func hostPlayerView(_ v: UIView) {
         v.translatesAutoresizingMaskIntoConstraints = false
         contentView.insertSubview(v, aboveSubview: posterView)
