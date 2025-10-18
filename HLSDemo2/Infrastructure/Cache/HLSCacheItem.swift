@@ -6,19 +6,6 @@
 //
 
 
-//
-//  HLSProxy.swift
-//  HLSDemo2
-//
-//  Локальный reverse-proxy c дисковым кешем для HLS (.m3u8, .ts, .m4s, .m4a, .mp4).
-//  Переписывает m3u8 так, чтобы ВСЕ сегменты и ключи шли через 127.0.0.1,
-//  поэтому AVPlayer всегда использует наш кеш.
-//
-//  Зависимости (SPM):
-//  - https://github.com/yene/GCDWebServer
-//  - https://github.com/hyperoslo/Cache
-//
-
 import Foundation
 import GCDWebServer
 import Cache
@@ -41,7 +28,7 @@ final class HLSProxy {
     private let cache: Storage<String, HLSCacheItem>
 
     private init() {
-        // URLSession
+        
         let cfg = URLSessionConfiguration.default
         cfg.waitsForConnectivity = true
         cfg.timeoutIntervalForRequest = 10
@@ -70,13 +57,13 @@ final class HLSProxy {
 
     // MARK: Public API
 
-    /// Прокси-URL для AVPlayer/AVURLAsset вместо оригинального.
+    
     func proxyURL(for origin: URL) -> URL {
         var c = URLComponents()
         c.scheme = "http"
         c.host   = "127.0.0.1"
         c.port   = Int(port)
-        // путь сохраняем, чтобы плеер не смущался относительных путей
+        
         c.path   = origin.path.isEmpty ? "/" : origin.path
 
         var items = origin.queryItems
@@ -85,7 +72,7 @@ final class HLSProxy {
         return c.url!
     }
 
-    /// Горячий префетч первых N секунд плейлиста (скачивается через прокси → в дисковый кеш).
+    
     func prefetchFirstSeconds(from originPlaylist: URL, seconds: Double, completion: (() -> Void)? = nil) {
         let m3u8 = proxyURL(for: originPlaylist)
         session.dataTask(with: m3u8) { [weak self] data, _, _ in
@@ -122,7 +109,7 @@ final class HLSProxy {
 
             let ext = origin.pathExtension.lowercased()
 
-            // m3u8 — читаем из кеша или качаем, сохраняем, переписываем и отдаём
+            
             if ext == "m3u8" {
                 if let cached = self.read(origin) {
                     if let out = self.rewritePlaylistData(cached, origin: origin) {
@@ -168,7 +155,7 @@ final class HLSProxy {
                 return
             }
 
-            // Прочее просто проксируем
+            
             self.fetch(origin) { data, mime in
                 guard let data, let mime else { return finish(GCDWebServerErrorResponse(statusCode: 502)) }
                 finish(GCDWebServerDataResponse(data: data, contentType: mime))
@@ -176,7 +163,7 @@ final class HLSProxy {
         }
     }
 
-    // MARK: Helpers
+    
 
     private func extractOrigin(from req: GCDWebServerRequest) -> URL? {
         guard let enc = req.query?[originKey],
@@ -216,7 +203,7 @@ final class HLSProxy {
         guard !line.isEmpty else { return line }
 
         if line.hasPrefix("#") {
-            // Переписываем URI="..." (ключи, субтитры)
+            
             let rx = try! NSRegularExpression(pattern: "URI=\"([^\"]*)\"")
             let ns = line as NSString
             let range = NSRange(location: 0, length: ns.length)
@@ -227,7 +214,7 @@ final class HLSProxy {
             return rx.stringByReplacingMatches(in: line, range: range, withTemplate: "URI=\"\(prox)\"")
         }
 
-        // Строка сегмента
+        
         if let abs = absolute(line, origin: origin) {
             return proxyURL(for: abs).absoluteString
         }
@@ -250,7 +237,7 @@ final class HLSProxy {
     }
 }
 
-// MARK: - Helpers
+
 
 private extension URL {
     var queryItems: [URLQueryItem] {
@@ -267,7 +254,7 @@ private struct HLSSeg {
 }
 
 private extension HLSProxy {
-    /// Очень простой парсер EXTINF/url из m3u8
+    
     func parseSegments(from playlistText: String, origin: URL) -> [HLSSeg] {
         var durs: [Double] = []
         var urls: [URL] = []

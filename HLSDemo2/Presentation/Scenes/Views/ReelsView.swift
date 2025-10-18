@@ -12,21 +12,21 @@ import AVFoundation
 struct ReelsView: View {
     @StateObject private var vm: ReelsViewModel
 
-    // Геометрия карточек
+    
     private let heightRatio: CGFloat = 0.8
     private let hPad: CGFloat = 34
     private let interItemGap: CGFloat = 20
 
-    // Пейджинг/позиция
+    
     @State private var scrollID: Int? = 0
     @State private var didSetInitial = false
     @State private var pendingActivation: Task<Void, Never>? = nil
     private let autoplayDelay: Duration = .seconds(1)
 
-    // Один раз инициализируем (чтобы .task не запускался повторно после возврата)
+    
     @State private var didBootstrap = false
 
-    // ⚠️ флаг, чтобы не останавливать плеер при переходе на деталку
+    
     @State private var isShowingDetail = false
 
     init() {
@@ -93,7 +93,7 @@ struct ReelsView: View {
                         }
                     }
 
-                    // первая и только первая загрузка
+                    
                     .task {
                         guard !didBootstrap else { return }
                         didBootstrap = true
@@ -110,7 +110,7 @@ struct ReelsView: View {
                         }
                     }
 
-                    // при возврате с деталки — убеждаемся, что стоим на активном индексе
+                    
                     .onAppear {
                         if let id = vm.activeVideoID,
                            let idx = vm.items.firstIndex(where: { $0.video_id == id }) {
@@ -121,7 +121,7 @@ struct ReelsView: View {
                     }
                 }
 
-                // 🔻 Плавающая нижняя панель
+                
                 BottomDock(
                     onHome: { /* TODO */ },
                     onBell: { /* TODO */ },
@@ -134,7 +134,7 @@ struct ReelsView: View {
                 .ignoresSafeArea(.keyboard, edges: .bottom)
                 .frame(maxHeight: .infinity, alignment: .bottom)
                 .zIndex(50)
-                // чтобы скролл проходил под панелью и её не дёргал
+                
                 .allowsHitTesting(true)
             }
             .onDisappear {
@@ -142,7 +142,7 @@ struct ReelsView: View {
                 if !isShowingDetail { vm.player.pause() }
             }
 
-            // прячем системный навбар
+            
             .toolbar(.hidden, for: .navigationBar)
             .navigationBarHidden(true)
             .navigationTitle("Reels")
@@ -158,7 +158,7 @@ struct ReelsView: View {
     }
 }
 
-// Подсветка активной карточки
+
 private struct ActiveHighlight: ViewModifier {
     let isActive: Bool
     func body(content: Content) -> some View {
@@ -170,7 +170,7 @@ private struct ActiveHighlight: ViewModifier {
     }
 }
 
-// MARK: - Bottom Dock
+
 
 private struct BottomDock: View {
     var onHome: () -> Void
@@ -185,7 +185,7 @@ private struct BottomDock: View {
 
             iconButton(system: "bell.fill", action: onBell)
 
-            // большой плюс по центру
+            
             Button(action: onPlus) {
                 ZStack {
                     Circle()
@@ -201,7 +201,7 @@ private struct BottomDock: View {
 
             // аватар справа
             Button(action: onProfile) {
-                Image("avatar_sample") // добавь в Assets, иначе заменяй на system
+                Image("avatar_sample")
                     .resizable()
                     .scaledToFill()
                     .frame(width: 34, height: 34)

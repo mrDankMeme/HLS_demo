@@ -6,9 +6,6 @@
 //
 
 
-//  PlayerLayerView.swift
-//  HLSDemo2
-
 import SwiftUI
 import AVFoundation
 
@@ -35,7 +32,7 @@ final class PlayerView: UIView {
         get { playerLayer.player }
         set {
             playerLayer.player = newValue
-            playerLayer.videoGravity = .resizeAspectFill // <- ключевая строка
+            playerLayer.videoGravity = .resizeAspectFill 
         }
     }
 }

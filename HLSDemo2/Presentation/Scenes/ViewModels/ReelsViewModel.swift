@@ -39,7 +39,7 @@ final class ReelsViewModel: ObservableObject {
         itemCancellables.removeAll()
     }
 
-    /// Грузим только один раз — когда пусто.
+    
     func load() async {
         guard items.isEmpty else { return }
         do {
@@ -52,14 +52,14 @@ final class ReelsViewModel: ObservableObject {
         }
     }
 
-    /// Активируем ролик: СНАЧАЛА подменяем item, ПОТОМ публикуем id.
+    
     func setActive(videoID: Int, mute: Bool = true) {
         guard activeVideoID != videoID else { return }
 
-        // 1) подготовка и замена текущего item
+        
         prepareAndAutoplay(videoID: videoID, mute: mute)
 
-        // 2) публикация id (VC приклеит уже к нужной ячейке)
+        
         activeVideoID = videoID
 
         // 3) преподогрев соседей
@@ -86,7 +86,7 @@ final class ReelsViewModel: ObservableObject {
         attachObservers(for: item)
         attachLoop(for: item)
 
-        // Сразу жмём play — система сама дождётся буфера
+        
         startPlaybackIfNeeded()
         kickstartIfNoProgress()
     }

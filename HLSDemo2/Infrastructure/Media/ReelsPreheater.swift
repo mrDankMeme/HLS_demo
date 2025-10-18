@@ -8,9 +8,7 @@
 import Foundation
 import AVFoundation
 
-/// Преподгрев и кеш через локальный reverse-proxy.
-/// Мы создаём AVURLAsset на проксированный URL, поэтому AVPlayer всегда ходит через прокси,
-/// а прокси — кэширует m3u8 и сегменты на диск.
+
 final class ReelsPreheater {
     private var cache: [Int: AVURLAsset] = [:]
     private var order: [Int] = []
@@ -26,7 +24,7 @@ final class ReelsPreheater {
         cache[videoID] = asset
         order.append(videoID)
         trimIfNeeded()
-        // мягкая прогрузка playable (не блокирует)
+        
         asset.loadValuesAsynchronously(forKeys: ["playable"]) {
             var error: NSError?
             _ = asset.statusOfValue(forKey: "playable", error: &error)
@@ -35,7 +33,7 @@ final class ReelsPreheater {
         return asset
     }
 
-    /// Прогреваем ±2 соседа и по 60s для каждого (если короче — возьмём меньше).
+    
     func warmNeighbors(currentIndex: Int, items: [VideoRecommendation]) {
         let indices = [currentIndex - 2, currentIndex - 1, currentIndex + 1, currentIndex + 2]
             .filter { $0 >= 0 && $0 < items.count }

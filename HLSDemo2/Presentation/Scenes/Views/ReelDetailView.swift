@@ -17,7 +17,7 @@ struct ReelDetailView: View {
 
     var body: some View {
         ZStack {
-            // 🎥 Видео фон
+            
             PlayerLayerView(player: sharedPlayer)
                 .ignoresSafeArea()
                 .onAppear {
@@ -28,9 +28,9 @@ struct ReelDetailView: View {
                     sharedPlayer.isMuted = true
                 }
 
-            // 🧭 Основной контент
+            
             VStack {
-                // 🔝 Кнопки навигации (поверх всего)
+                
                 HStack {
                     Button {
                         sharedPlayer.isMuted = true
@@ -48,7 +48,7 @@ struct ReelDetailView: View {
                     Spacer()
 
                     Button {
-                        // share
+                        
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.title2)
@@ -83,7 +83,7 @@ struct ReelDetailView: View {
         .navigationBarBackButtonHidden(true)
     }
 
-    // MARK: Верхняя часть
+    
     private var topSection: some View {
         HStack(alignment: .top, spacing: 16) {
             avatarBlock
@@ -110,7 +110,7 @@ struct ReelDetailView: View {
         .padding(.horizontal, 20)
     }
 
-    // MARK: Нижняя часть
+    
     private var bottomSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             friendsAndViewers
@@ -171,7 +171,7 @@ struct ReelDetailView: View {
         }
     }
 
-    // 👇 горизонтальные реакции
+    
     private var reactionsBlock: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
@@ -216,7 +216,7 @@ struct ReelDetailView: View {
         .padding(.horizontal, 20)
     }
 
-    // MARK: - Аватар с изображением
+    
     private var avatarBlock: some View {
         ZStack(alignment: .bottom) {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -245,9 +245,9 @@ struct ReelDetailView: View {
         }
     }
 
-    // MARK: - Изображение для аватара (локально или из сети)
+    
     private var avatarImage: Image {
-        Image("avatar_sample") // Добавь avatar_sample в Assets.xcassets
+        Image("avatar_sample") 
     }
 
     // MARK: Safe area

@@ -6,13 +6,6 @@
 //
 
 
-//
-//  ImageLoader.swift
-//  HLSDemo2
-//
-//  Created by Niiaz Khasanov on 10/17/25.
-//
-
 import UIKit
 
 final class ImageLoader {

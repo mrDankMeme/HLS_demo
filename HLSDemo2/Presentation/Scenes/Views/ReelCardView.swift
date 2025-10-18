@@ -14,38 +14,38 @@ struct ReelCardView: View {
     let title: String
     let previewURL: URL?
     let player: AVPlayer
-
+    
     private let username = "@kristina"
     private let tags = ["#португалия", "#природа", "#лето", "#океан", "#пляж", "#волны", "#закат", "#море", "#релакс", "#trip", "#sunset"]
     @State private var liked = false
-
+    
     var body: some View {
         GeometryReader { geo in
             let cardSize = geo.size
-
+            
             ZStack {
-                // 1) Бэкграунд фиксированного размера — базовая геометрия карточки
+                
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color.black)
                     .frame(width: cardSize.width, height: cardSize.height)
-
-                // 2) ВСЕГДА рендерим плеер (одинаковое дерево вида → стабильный layout)
+                
+                
                 PlayerLayerView(player: player)
                     .frame(width: cardSize.width, height: cardSize.height)
                     .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .allowsHitTesting(false)
-
-                // 3) Превью-картинка ЛЕЖИТ СВЕРХУ и просто скрывается, когда ролик активен
+                
+                
                 previewLayer(size: cardSize)
                     .opacity(isActive ? 0.0 : 1.0)
                     .animation(.easeOut(duration: 0.18), value: isActive)
                     .allowsHitTesting(false)
-
-                // 4) Стабильные слои поверх — градиенты и контент
+                
+                
                 gradientsOverlay
                     .frame(width: cardSize.width, height: cardSize.height)
                     .allowsHitTesting(false)
-
+                
                 contentOverlay
                     .frame(width: cardSize.width, height: cardSize.height)
             }
@@ -55,8 +55,8 @@ struct ReelCardView: View {
             )
         }
     }
-
-    // MARK: - Preview layer (одинаковая геометрия для активного/неактивного)
+    
+    
     private func previewLayer(size: CGSize) -> some View {
         Group {
             if let url = previewURL {
@@ -75,24 +75,24 @@ struct ReelCardView: View {
         .frame(width: size.width, height: size.height)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
-
-    // MARK: - Градиенты поверх
+    
+    
     private var gradientsOverlay: some View {
         VStack {
             LinearGradient(colors: [Color.black.opacity(0.45), .clear],
                            startPoint: .top, endPoint: .bottom)
-                .frame(height: 190)
-                .frame(maxWidth: .infinity)
+            .frame(height: 190)
+            .frame(maxWidth: .infinity)
             Spacer()
             LinearGradient(colors: [.clear, Color.black.opacity(0.55)],
                            startPoint: .top, endPoint: .bottom)
-                .frame(height: 230)
-                .frame(maxWidth: .infinity)
+            .frame(height: 230)
+            .frame(maxWidth: .infinity)
         }
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
-
-    // MARK: - Контент (не зависит от видео/превью)
+    
+    
     private var contentOverlay: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Верх
@@ -118,10 +118,10 @@ struct ReelCardView: View {
             }
             .padding(.top, 18)
             .padding(.horizontal, 18)
-
+            
             Spacer()
-
-            // Хэштеги
+            
+            
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(tags, id: \.self) { t in
@@ -138,8 +138,8 @@ struct ReelCardView: View {
             }
             .frame(height: 44)
             .padding(.bottom, 10)
-
-            // Нижняя панель
+            
+            
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "mappin.and.ellipse").foregroundStyle(.white)
@@ -175,12 +175,12 @@ struct ReelCardView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    // MARK: - Аватар
-
+    
+    
+    
     private var avatarBlock: some View {
         ZStack(alignment: .bottom) {
-            // 🟦 Внешняя рамка + фон
+            
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(.white.opacity(0.95), lineWidth: 4)
                 .background(
@@ -197,8 +197,8 @@ struct ReelCardView: View {
                         )
                 )
                 .frame(width: 116, height: 152)
-
-            // 🟥 Метка Live
+            
+            
             Text("Live")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(.white)
@@ -210,11 +210,10 @@ struct ReelCardView: View {
         }
         .padding(.bottom, 12)
     }
-
-    // MARK: - Изображение для аватара
+    
+    
     private var avatarImage: Image {
-        // Можно заменить на AsyncImage(url:) если аватар приходит по URL
-        Image("avatar_sample") // 🔹 добавь картинку в Assets.xcassets
+        Image("avatar_sample")
     }
-
+    
 }
