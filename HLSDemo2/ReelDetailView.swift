@@ -17,7 +17,8 @@ struct ReelDetailView: View {
 
     var body: some View {
         ZStack {
-            // один и тот же AVPlayer — не создаём новый, просто показываем слой
+            
+            // Видео фон
             PlayerLayerView(player: sharedPlayer)
                 .ignoresSafeArea()
                 .onAppear {
@@ -25,57 +26,65 @@ struct ReelDetailView: View {
                     sharedPlayer.play()
                 }
                 .onDisappear {
-                    // назад в ленте оставим плеер в mute
                     sharedPlayer.isMuted = true
                 }
 
+            // Основной контент
             VStack {
-                topSection
-                Spacer()
-                bottomSection
-            }
-            .padding(.top, 44)
-            .background(
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.85)],
-                    startPoint: .center, endPoint: .bottom
+                // 🔝 Кнопки навигации (поверх всего)
+                HStack {
+                    Button {
+                        sharedPlayer.isMuted = true
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(16)
+                            .background(Color.black.opacity(0.0))
+                            .clipShape(Circle())
+                    }
+                    .padding(.leading, 16)
+
+                    Spacer()
+
+                    Button {
+                        // share
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .padding(16)
+                            .background(Color.black.opacity(0.0))
+                            .clipShape(Circle())
+                    }
+                    .padding(.trailing, 16)
+                }
+                .padding(.top, 0)
+                .zIndex(10)
+                Spacer(minLength: 0)
+                VStack {
+                    topSection
+                    Spacer()
+                    bottomSection
+                }
+                .padding(.top, 10)
+                .background(
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.85)],
+                        startPoint: .center,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea(edges: .bottom)
                 )
-                .ignoresSafeArea(edges: .bottom)
-            )
+            }
+
+           
         }
         .navigationBarBackButtonHidden(true)
-        .overlay(alignment: .topLeading) {
-            Button {
-                sharedPlayer.isMuted = true
-                dismiss()
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(16)
-                    .background(Color.black.opacity(0.35))
-                    .clipShape(Circle())
-                    .padding(.top, 50)
-                    .padding(.leading, 12)
-            }
-        }
-        .overlay(alignment: .topTrailing) {
-            Button {
-                // share
-            } label: {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .padding(16)
-                    .background(Color.black.opacity(0.35))
-                    .clipShape(Circle())
-                    .padding(.top, 50)
-                    .padding(.trailing, 12)
-            }
-        }
     }
 
-    // MARK: Верхний блок
+    // MARK: Верхняя часть
     private var topSection: some View {
         HStack(alignment: .top, spacing: 16) {
             avatarBlock
@@ -102,7 +111,7 @@ struct ReelDetailView: View {
         .padding(.horizontal, 20)
     }
 
-    // MARK: Нижний блок
+    // MARK: Нижняя часть
     private var bottomSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             friendsAndViewers
@@ -134,11 +143,13 @@ struct ReelDetailView: View {
     private var locationBlock: some View {
         HStack(spacing: 12) {
             Image(systemName: "mappin.and.ellipse").foregroundStyle(.white)
-            Text("RA'MEN").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
-            Image(systemName: "arrow.up.right.circle.fill").foregroundStyle(Color.green)
+            Text("RA'MEN")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+            Image(systemName: "arrow.up.right.circle.fill").foregroundStyle(.green)
             HStack(spacing: 6) {
                 Image(systemName: "film").foregroundStyle(.white)
-                Text("(12)").font(.system(size: 16)).foregroundStyle(.white)
+                Text("(12)").foregroundStyle(.white)
             }
         }
         .padding(.horizontal, 20)
@@ -147,8 +158,8 @@ struct ReelDetailView: View {
     private var hashtagsBlock: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(["#португалия", "#природа", "#лето"], id: \.self) { t in
-                    Text(t)
+                ForEach(["#португалия", "#природа", "#лето"], id: \.self) { tag in
+                    Text(tag)
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
@@ -161,25 +172,31 @@ struct ReelDetailView: View {
         }
     }
 
+    // 👇 исправлено: всё по горизонтали, без вертикальных переносов
     private var reactionsBlock: some View {
-        HStack(spacing: 18) {
-            reaction("😍", "10k")
-            reaction("❤️", "100k")
-            reaction("🙈", "5k")
-            reaction("👍", "300k")
-            reaction("☺️", "567")
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                reaction("😍", "10k")
+                reaction("❤️", "100k")
+                reaction("🙈", "5k")
+                reaction("👍", "300k")
+                reaction("☺️", "567")
+            }
+            .padding(.horizontal, 20)
         }
-        .padding(.horizontal, 20)
     }
 
     private func reaction(_ emoji: String, _ count: String) -> some View {
-        HStack(spacing: 6) {
-            Text(emoji).font(.system(size: 20))
-            Text(count).font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
+        HStack(spacing: 8) {
+            Text(emoji)
+                .font(.system(size: 22))
+            Text(count)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color.black.opacity(0.3))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.35))
         .clipShape(Capsule())
     }
 
@@ -191,9 +208,7 @@ struct ReelDetailView: View {
                 .background(Color.white.opacity(0.18))
                 .cornerRadius(25)
                 .foregroundColor(.white)
-            Button {
-                commentText = ""
-            } label: {
+            Button { commentText = "" } label: {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 24))
                     .foregroundStyle(.white)
@@ -221,5 +236,11 @@ struct ReelDetailView: View {
                 .clipShape(Capsule())
                 .offset(y: 10)
         }
+    }
+
+    // MARK: Safe area
+    private func safeAreaTop() -> CGFloat {
+        (UIApplication.shared.connectedScenes.first as? UIWindowScene)?
+            .windows.first?.safeAreaInsets.top ?? 44
     }
 }

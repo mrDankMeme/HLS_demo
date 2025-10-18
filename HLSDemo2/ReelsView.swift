@@ -13,15 +13,18 @@ struct ReelsView: View {
     @StateObject private var vm: ReelsViewModel
 
     // Геометрия карточек
-    private let heightRatio: CGFloat = 0.65
+    private let heightRatio: CGFloat = 0.8
     private let hPad: CGFloat = 34
     private let interItemGap: CGFloat = 20
 
-    // Пейджинг
+    // Пейджинг/позиция
     @State private var scrollID: Int? = 0
     @State private var didSetInitial = false
     @State private var pendingActivation: Task<Void, Never>? = nil
     private let autoplayDelay: Duration = .seconds(1)
+
+    // Один раз инициализируем (чтобы .task не запускался повторно после возврата)
+    @State private var didBootstrap = false
 
     // ⚠️ флаг, чтобы не останавливать плеер при переходе на деталку
     @State private var isShowingDetail = false
@@ -46,7 +49,6 @@ struct ReelsView: View {
                             let active = (vm.activeVideoID == m.video_id)
                             let preview = m.preview_image.flatMap(URL.init(string:))
 
-                            // навигация в деталку: выставляем флаг, чтобы не паузить плеер
                             NavigationLink {
                                 ReelDetailView(video: m, sharedPlayer: vm.player)
                                     .onAppear { isShowingDetail = true }
@@ -89,31 +91,38 @@ struct ReelsView: View {
                     }
                 }
 
-                // первая загрузка
-                .onChange(of: vm.items.count) { _, count in
-                    guard count > 0, !didSetInitial else { return }
-                    DispatchQueue.main.async {
-                        didSetInitial = true
-                        scrollID = 0
-                    }
-                }
+                // первая и только первая загрузка
                 .task {
+                    guard !didBootstrap else { return }
+                    didBootstrap = true
                     setupAudio()
                     await vm.load()
                     if !vm.items.isEmpty {
-                        DispatchQueue.main.async {
-                            didSetInitial = true
+                        didSetInitial = true
+                        // установим позицию на активный элемент (если уже есть)
+                        if let id = vm.activeVideoID,
+                           let idx = vm.items.firstIndex(where: { $0.video_id == id }) {
+                            scrollID = idx
+                        } else {
                             scrollID = 0
+                        }
+                    }
+                }
+
+                // при возврате с деталки — убеждаемся, что стоим на активном индексе
+                .onAppear {
+                    if let id = vm.activeVideoID,
+                       let idx = vm.items.firstIndex(where: { $0.video_id == id }) {
+                        // только если биндинг ушёл в nil/сбился — вернём на место
+                        if scrollID != idx {
+                            scrollID = idx
                         }
                     }
                 }
             }
             .onDisappear {
                 pendingActivation?.cancel()
-                // ❗️не останавливаем плеер, если мы просто ушли на экран деталки
-                if !isShowingDetail {
-                    vm.player.pause()
-                }
+                if !isShowingDetail { vm.player.pause() }
             }
             .navigationTitle("Reels")
             .animation(.easeOut(duration: 0.22), value: scrollID)
@@ -133,8 +142,8 @@ private struct ActiveHighlight: ViewModifier {
     let isActive: Bool
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isActive ? 1.0 : 0.94)
-            .opacity(isActive ? 1.0 : 0.6)
+            .scaleEffect(isActive ? 1.0 : 1.0)
+            .opacity(isActive ? 1.0 : 1.0)
             .shadow(color: .black.opacity(isActive ? 0.35 : 0.0),
                     radius: isActive ? 18 : 0, x: 0, y: 12)
     }

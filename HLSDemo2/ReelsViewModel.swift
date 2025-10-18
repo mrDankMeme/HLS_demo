@@ -39,7 +39,9 @@ final class ReelsViewModel: ObservableObject {
         itemCancellables.removeAll()
     }
 
+    /// Грузим только один раз — когда пусто.
     func load() async {
+        guard items.isEmpty else { return }
         do {
             let recs = try await repo.fetchRecommendations(offset: 0, limit: 40)
             let playable = recs.filter { ($0.has_access ?? false) || (($0.free ?? false) && $0.time_not_reg == nil) }
@@ -107,7 +109,6 @@ final class ReelsViewModel: ObservableObject {
         player.publisher(for: \.timeControlStatus)
             .removeDuplicates()
             .sink { status in
-                // можно добавить логику по статусу, если нужно
                 _ = status
             }
             .store(in: &itemCancellables)
@@ -120,7 +121,6 @@ final class ReelsViewModel: ObservableObject {
     }
 
     private func kickstartIfNoProgress() {
-        // через ~1.5 сек если всё ещё не играет — повторим play()
         Just(())
             .delay(for: .seconds(1.5), scheduler: RunLoop.main)
             .sink { [weak self] _ in
