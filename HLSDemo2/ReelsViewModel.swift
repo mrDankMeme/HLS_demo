@@ -2,9 +2,8 @@
 //  ReelsViewModel.swift
 //  HLSDemo2
 //
-//  Created by Niiaz Khasanov on 10/17/25.
+//  Updated by Niiaz Khasanov on 10/18/25
 //
-
 
 import Foundation
 import Combine
@@ -26,21 +25,16 @@ final class ReelsViewModel: ObservableObject {
     private var timeObserver: Any?
     private var lastLoadedID: Int?
 
-    private let lastIDKey = "reels.lastActiveVideoID"
-
     init(repo: VideoRepository, player: AVPlayer = AVPlayer()) {
         self.repo = repo
         self.player = player
         bindAppLifecycle()
         attachDiagnosticsIfNeeded()
-        if let saved = readLastID() { activeVideoID = saved }
     }
 
     deinit {
         if let obs = timeObserver { player.removeTimeObserver(obs) }
         NotificationCenter.default.removeObserver(self)
-        lifetimeCancellables.removeAll()
-        itemCancellables.removeAll()
     }
 
     func load() async {
@@ -49,15 +43,11 @@ final class ReelsViewModel: ObservableObject {
             let playable = recs.filter { ($0.has_access ?? false) || (($0.free ?? false) && $0.time_not_reg == nil) }
             self.items = playable
 
-            let preferredID: Int? = {
-                if let saved = readLastID(),
-                   playable.contains(where: { $0.video_id == saved }) { return saved }
-                return playable.first?.video_id
-            }()
+            let files = HLSSegmentStore.shared.cachedSummary()
+            if files.isEmpty { print("📭 HLS disk cache is empty") }
+            else { print("📦 HLS disk cache files: \(files.count)") }
 
-            if let id = preferredID {
-                setActive(videoID: id)
-            }
+            if let first = playable.first { setActive(videoID: first.video_id) }
         } catch {
             print("reels load error:", error)
         }
@@ -65,12 +55,20 @@ final class ReelsViewModel: ObservableObject {
 
     func setActive(videoID: Int, mute: Bool = true) {
         guard activeVideoID != videoID else { return }
+        print("🎬 activate videoID=\(videoID)")
+
+        // 💡 Сначала гасим старые префетчи — уменьшаем конкуренцию
+        HLSSegmentPrefetcher.shared.cancelAll()
+        HLSSegmentPrefetcher.shared.resume() // гарантируем незапаузенное состояние для нового старта
+
+        // потом префетчим текущий (60s) c небольшой задержкой
+        preheater.prefetchCurrent(videoID: videoID)
 
         prepareAndAutoplay(videoID: videoID, mute: mute)
         activeVideoID = videoID
-        writeLastID(videoID)
 
         if let idx = items.firstIndex(where: { $0.video_id == videoID }) {
+            // соседей начнём тоже с задержкой внутри prefetcher
             preheater.warmNeighbors(currentIndex: idx, items: items)
         }
     }
@@ -81,7 +79,10 @@ final class ReelsViewModel: ObservableObject {
 
         let asset = preheater.asset(for: videoID)
         let item  = AVPlayerItem(asset: asset)
-        item.preferredForwardBufferDuration = 2.5
+        item.preferredForwardBufferDuration = 4.0
+        item.preferredPeakBitRate = 1_000_000
+
+        print("▶️ start (cache will be logged per segment)")
 
         player.pause()
         player.automaticallyWaitsToMinimizeStalling = true
@@ -93,7 +94,7 @@ final class ReelsViewModel: ObservableObject {
         attachObservers(for: item)
         attachLoop(for: item)
 
-        startPlaybackIfNeeded()
+        if player.timeControlStatus != .playing { player.play() }
         kickstartIfNoProgress()
     }
 
@@ -103,25 +104,29 @@ final class ReelsViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
-                    self.startPlaybackIfNeeded()
+                    if self.player.timeControlStatus != .playing { self.player.play() }
                 }
             }
             .store(in: &itemCancellables)
     }
 
-    private func attachObservers(for: AVPlayerItem) {
+    private func attachObservers(for item: AVPlayerItem) {
         itemCancellables.removeAll()
 
+        // 👉 Когда плеер «голодает» — ставим префетчер на паузу. Когда норм — резюмим.
         player.publisher(for: \.timeControlStatus)
             .removeDuplicates()
-            .sink { _ in }
+            .sink { status in
+                switch status {
+                case .waitingToPlayAtSpecifiedRate, .paused:
+                    HLSSegmentPrefetcher.shared.suspend()
+                case .playing:
+                    HLSSegmentPrefetcher.shared.resume()
+                @unknown default:
+                    break
+                }
+            }
             .store(in: &itemCancellables)
-    }
-
-    private func startPlaybackIfNeeded() {
-        if player.timeControlStatus != .playing {
-            player.play()
-        }
     }
 
     private func kickstartIfNoProgress() {
@@ -138,11 +143,14 @@ final class ReelsViewModel: ObservableObject {
 
     private func bindAppLifecycle() {
         NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)
-            .sink { [weak self] _ in self?.player.pause() }
+            .sink { [weak self] _ in
+                self?.player.pause()
+                HLSSegmentPrefetcher.shared.suspend()
+            }
             .store(in: &lifetimeCancellables)
 
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .sink { [weak self] _ in self?.startPlaybackIfNeeded() }
+            .sink { _ in HLSSegmentPrefetcher.shared.resume() }
             .store(in: &lifetimeCancellables)
     }
 
@@ -161,15 +169,7 @@ final class ReelsViewModel: ObservableObject {
                 @unknown default: return "unknown"
                 }
             }()
-            print(String(format: "reels %.2f s | %@", t.seconds, st))
+            print(String(format: "reels ⏱ %.2f s | %@", t.seconds, st))
         }
-    }
-
-    private func readLastID() -> Int? {
-        UserDefaults.standard.object(forKey: lastIDKey) as? Int
-    }
-
-    private func writeLastID(_ id: Int) {
-        UserDefaults.standard.set(id, forKey: lastIDKey)
     }
 }

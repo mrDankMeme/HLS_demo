@@ -2,7 +2,7 @@
 //  HTTPClient.swift
 //  HLSDemo2
 //
-//  Created by Niiaz Khasanov on 10/17/25.
+//  Updated by Niiaz Khasanov on 10/18/25
 //
 
 import Foundation
@@ -16,7 +16,13 @@ public final class DefaultHTTPClient: HTTPClient {
 
     public init() {
         let cfg = URLSessionConfiguration.default
-        cfg.timeoutIntervalForRequest = 10
+        cfg.urlCache = URLCache(
+            memoryCapacity: 512 * 1024 * 1024,
+            diskCapacity:   512 * 1024 * 1024,
+            diskPath:       "http-cache"
+        )
+        cfg.requestCachePolicy = .useProtocolCachePolicy
+        cfg.timeoutIntervalForRequest  = 10
         cfg.timeoutIntervalForResource = 15
         cfg.waitsForConnectivity = true
         cfg.httpAdditionalHeaders = [
@@ -27,11 +33,9 @@ public final class DefaultHTTPClient: HTTPClient {
     }
 
     public func get(url: URL) async throws -> (Data, HTTPURLResponse) {
-        var req = URLRequest(url: url)
-        req.cachePolicy = .reloadRevalidatingCacheData
-        let (data, resp) = try await session.data(for: req)
-        guard let http = resp as? HTTPURLResponse else { throw URLError(.badServerResponse) }
-        guard (200..<300).contains(http.statusCode) else { throw URLError(.badServerResponse) }
+        let (data, resp) = try await session.data(from: url)
+        guard let http = resp as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode) else { throw URLError(.badServerResponse) }
         return (data, http)
     }
 }

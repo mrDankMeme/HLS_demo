@@ -6,46 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		A352EE2A2EA29D5B0011B9D6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A352EE192EA29D5B0011B9D6 /* Assets.xcassets */; };
-		A352EE772EA29FF60011B9D6 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE6A2EA29FF60011B9D6 /* ImageLoader.swift */; };
-		A352EE782EA29FF60011B9D6 /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE692EA29FF60011B9D6 /* HTTPClient.swift */; };
-		A352EE792EA29FF60011B9D6 /* ReelsPagerRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE6F2EA29FF60011B9D6 /* ReelsPagerRepresentable.swift */; };
-		A352EE7A2EA29FF60011B9D6 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE6C2EA29FF60011B9D6 /* MainView.swift */; };
-		A352EE7B2EA29FF60011B9D6 /* SnappingFlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE742EA29FF60011B9D6 /* SnappingFlowLayout.swift */; };
-		A352EE7C2EA29FF60011B9D6 /* ReelsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE732EA29FF60011B9D6 /* ReelsViewModel.swift */; };
-		A352EE7D2EA29FF60011B9D6 /* ReelsPreheater.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE712EA29FF60011B9D6 /* ReelsPreheater.swift */; };
-		A352EE7F2EA29FF60011B9D6 /* VideoRecommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE752EA29FF60011B9D6 /* VideoRecommendation.swift */; };
-		A352EE802EA29FF60011B9D6 /* ReelsPagerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE702EA29FF60011B9D6 /* ReelsPagerViewController.swift */; };
-		A352EE812EA29FF60011B9D6 /* VideoRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE762EA29FF60011B9D6 /* VideoRepository.swift */; };
-		A352EE822EA29FF60011B9D6 /* ReelCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE6E2EA29FF60011B9D6 /* ReelCell.swift */; };
-		A352EE832EA29FF60011B9D6 /* ReelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE722EA29FF60011B9D6 /* ReelsView.swift */; };
-		A352EE842EA29FF60011B9D6 /* DemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE672EA29FF60011B9D6 /* DemoApp.swift */; };
-		A352EE852EA29FF60011B9D6 /* PlayerSurfaceUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE6D2EA29FF60011B9D6 /* PlayerSurfaceUIView.swift */; };
-		A352EE862EA29FF60011B9D6 /* InteresnoAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE6B2EA29FF60011B9D6 /* InteresnoAPI.swift */; };
-		A352EE882EA2A0480011B9D6 /* ReelsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A352EE872EA2A0480011B9D6 /* ReelsDetailView.swift */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		A352EDC72EA27D620011B9D6 /* HLSDemo2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HLSDemo2.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A352EE192EA29D5B0011B9D6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A352EE672EA29FF60011B9D6 /* DemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoApp.swift; sourceTree = "<group>"; };
-		A352EE692EA29FF60011B9D6 /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPClient.swift; sourceTree = "<group>"; };
-		A352EE6A2EA29FF60011B9D6 /* ImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageLoader.swift; sourceTree = "<group>"; };
-		A352EE6B2EA29FF60011B9D6 /* InteresnoAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteresnoAPI.swift; sourceTree = "<group>"; };
-		A352EE6C2EA29FF60011B9D6 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
-		A352EE6D2EA29FF60011B9D6 /* PlayerSurfaceUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerSurfaceUIView.swift; sourceTree = "<group>"; };
-		A352EE6E2EA29FF60011B9D6 /* ReelCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelCell.swift; sourceTree = "<group>"; };
-		A352EE6F2EA29FF60011B9D6 /* ReelsPagerRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsPagerRepresentable.swift; sourceTree = "<group>"; };
-		A352EE702EA29FF60011B9D6 /* ReelsPagerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsPagerViewController.swift; sourceTree = "<group>"; };
-		A352EE712EA29FF60011B9D6 /* ReelsPreheater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsPreheater.swift; sourceTree = "<group>"; };
-		A352EE722EA29FF60011B9D6 /* ReelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsView.swift; sourceTree = "<group>"; };
-		A352EE732EA29FF60011B9D6 /* ReelsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsViewModel.swift; sourceTree = "<group>"; };
-		A352EE742EA29FF60011B9D6 /* SnappingFlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnappingFlowLayout.swift; sourceTree = "<group>"; };
-		A352EE752EA29FF60011B9D6 /* VideoRecommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecommendation.swift; sourceTree = "<group>"; };
-		A352EE762EA29FF60011B9D6 /* VideoRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRepository.swift; sourceTree = "<group>"; };
-		A352EE872EA2A0480011B9D6 /* ReelsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A352EDC92EA27D620011B9D6 /* HLSDemo2 */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = HLSDemo2;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A352EDC42EA27D620011B9D6 /* Frameworks */ = {
@@ -61,7 +32,7 @@
 		A352EDBE2EA27D620011B9D6 = {
 			isa = PBXGroup;
 			children = (
-				A352EE292EA29D5B0011B9D6 /* HLSDemo2 */,
+				A352EDC92EA27D620011B9D6 /* HLSDemo2 */,
 				A352EDC82EA27D620011B9D6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,110 +43,6 @@
 				A352EDC72EA27D620011B9D6 /* HLSDemo2.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		A352EE292EA29D5B0011B9D6 /* HLSDemo2 */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE8D2EA2A4690011B9D6 /* Presentation */,
-				A352EE8C2EA2A4420011B9D6 /* Infrastructure */,
-				A352EE8A2EA2A4080011B9D6 /* Domain */,
-				A352EE892EA2A3F30011B9D6 /* App */,
-				A352EE192EA29D5B0011B9D6 /* Assets.xcassets */,
-			);
-			path = HLSDemo2;
-			sourceTree = "<group>";
-		};
-		A352EE892EA2A3F30011B9D6 /* App */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE672EA29FF60011B9D6 /* DemoApp.swift */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-		A352EE8A2EA2A4080011B9D6 /* Domain */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE752EA29FF60011B9D6 /* VideoRecommendation.swift */,
-				A352EE762EA29FF60011B9D6 /* VideoRepository.swift */,
-			);
-			path = Domain;
-			sourceTree = "<group>";
-		};
-		A352EE8C2EA2A4420011B9D6 /* Infrastructure */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE6B2EA29FF60011B9D6 /* InteresnoAPI.swift */,
-				A352EE6A2EA29FF60011B9D6 /* ImageLoader.swift */,
-				A352EE712EA29FF60011B9D6 /* ReelsPreheater.swift */,
-				A352EE692EA29FF60011B9D6 /* HTTPClient.swift */,
-			);
-			path = Infrastructure;
-			sourceTree = "<group>";
-		};
-		A352EE8D2EA2A4690011B9D6 /* Presentation */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE912EA2A5590011B9D6 /* Scenes */,
-			);
-			path = Presentation;
-			sourceTree = "<group>";
-		};
-		A352EE8E2EA2A4710011B9D6 /* Reels */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE932EA2A56F0011B9D6 /* ViewModels */,
-				A352EE902EA2A5360011B9D6 /* UIKit */,
-				A352EE8F2EA2A50B0011B9D6 /* Views */,
-			);
-			path = Reels;
-			sourceTree = "<group>";
-		};
-		A352EE8F2EA2A50B0011B9D6 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE6E2EA29FF60011B9D6 /* ReelCell.swift */,
-				A352EE6D2EA29FF60011B9D6 /* PlayerSurfaceUIView.swift */,
-				A352EE6F2EA29FF60011B9D6 /* ReelsPagerRepresentable.swift */,
-				A352EE872EA2A0480011B9D6 /* ReelsDetailView.swift */,
-				A352EE722EA29FF60011B9D6 /* ReelsView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		A352EE902EA2A5360011B9D6 /* UIKit */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE702EA29FF60011B9D6 /* ReelsPagerViewController.swift */,
-				A352EE742EA29FF60011B9D6 /* SnappingFlowLayout.swift */,
-			);
-			path = UIKit;
-			sourceTree = "<group>";
-		};
-		A352EE912EA2A5590011B9D6 /* Scenes */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE922EA2A5630011B9D6 /* Main */,
-				A352EE8E2EA2A4710011B9D6 /* Reels */,
-			);
-			path = Scenes;
-			sourceTree = "<group>";
-		};
-		A352EE922EA2A5630011B9D6 /* Main */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE6C2EA29FF60011B9D6 /* MainView.swift */,
-			);
-			path = Main;
-			sourceTree = "<group>";
-		};
-		A352EE932EA2A56F0011B9D6 /* ViewModels */ = {
-			isa = PBXGroup;
-			children = (
-				A352EE732EA29FF60011B9D6 /* ReelsViewModel.swift */,
-			);
-			path = ViewModels;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -192,6 +59,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A352EDC92EA27D620011B9D6 /* HLSDemo2 */,
 			);
 			name = HLSDemo2;
 			packageProductDependencies = (
@@ -212,7 +82,6 @@
 				TargetAttributes = {
 					A352EDC62EA27D620011B9D6 = {
 						CreatedOnToolsVersion = 26.0;
-						LastSwiftMigration = 2600;
 					};
 				};
 			};
@@ -240,7 +109,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A352EE2A2EA29D5B0011B9D6 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,22 +119,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A352EE772EA29FF60011B9D6 /* ImageLoader.swift in Sources */,
-				A352EE782EA29FF60011B9D6 /* HTTPClient.swift in Sources */,
-				A352EE792EA29FF60011B9D6 /* ReelsPagerRepresentable.swift in Sources */,
-				A352EE7A2EA29FF60011B9D6 /* MainView.swift in Sources */,
-				A352EE7B2EA29FF60011B9D6 /* SnappingFlowLayout.swift in Sources */,
-				A352EE7C2EA29FF60011B9D6 /* ReelsViewModel.swift in Sources */,
-				A352EE7D2EA29FF60011B9D6 /* ReelsPreheater.swift in Sources */,
-				A352EE7F2EA29FF60011B9D6 /* VideoRecommendation.swift in Sources */,
-				A352EE802EA29FF60011B9D6 /* ReelsPagerViewController.swift in Sources */,
-				A352EE882EA2A0480011B9D6 /* ReelsDetailView.swift in Sources */,
-				A352EE812EA29FF60011B9D6 /* VideoRepository.swift in Sources */,
-				A352EE822EA29FF60011B9D6 /* ReelCell.swift in Sources */,
-				A352EE832EA29FF60011B9D6 /* ReelsView.swift in Sources */,
-				A352EE842EA29FF60011B9D6 /* DemoApp.swift in Sources */,
-				A352EE852EA29FF60011B9D6 /* PlayerSurfaceUIView.swift in Sources */,
-				A352EE862EA29FF60011B9D6 /* InteresnoAPI.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,7 +251,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2NVL5EUMWM;
@@ -421,7 +272,6 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -433,7 +283,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2NVL5EUMWM;

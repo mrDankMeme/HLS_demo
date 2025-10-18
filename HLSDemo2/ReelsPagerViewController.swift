@@ -5,7 +5,6 @@
 //  Created by Niiaz Khasanov on 10/17/25.
 //
 
-
 import UIKit
 import AVKit
 import AVFoundation
@@ -15,22 +14,22 @@ final class ReelsPagerViewController: UIViewController,
                                       UICollectionViewDelegate,
                                       UIScrollViewDelegate {
 
+    // UI
     private let layout = SnappingFlowLayout()
     private var collectionView: UICollectionView!
 
+    // данные
     private var items: [VideoRecommendation] = []
     private var activeID: Int?
     private var didSetInitial = false
     private var lastItemsSignature: String?
     private var currentCenteredIndex: Int?
 
+    // связи
     var onActiveIndexChanged: ((Int) -> Void)?
-    var onTapActive: (() -> Void)?
     var sharedPlayer: AVPlayer!
 
-    private var isDetailShown = false
-    private var didForceInitialCenter = false
-
+    // один AVPlayerViewController, который «кочует» между ячейками
     private let playerVC: AVPlayerViewController = {
         let vc = AVPlayerViewController()
         vc.showsPlaybackControls = false
@@ -44,15 +43,11 @@ final class ReelsPagerViewController: UIViewController,
     }()
     private weak var currentHostCell: ReelCell?
 
+    // Layout
     private let hPad: CGFloat = 24
     private let vPad: CGFloat = 24
 
-    private lazy var tapRecognizer: UITapGestureRecognizer = {
-        let gr = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-        gr.cancelsTouchesInView = false
-        return gr
-    }()
-
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
@@ -70,8 +65,6 @@ final class ReelsPagerViewController: UIViewController,
         collectionView.register(ReelCell.self, forCellWithReuseIdentifier: ReelCell.reuseID)
         collectionView.dataSource = self
         collectionView.delegate = self
-        collectionView.addGestureRecognizer(tapRecognizer)
-        collectionView.contentInsetAdjustmentBehavior = .never
 
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([
@@ -92,15 +85,7 @@ final class ReelsPagerViewController: UIViewController,
         if let host = currentHostCell { playerVC.view.frame = host.contentView.bounds }
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        if !didForceInitialCenter, !items.isEmpty, let id = activeID,
-           let index = items.firstIndex(where: { $0.video_id == id }) {
-            didForceInitialCenter = true
-            centerItem(at: index)
-        }
-    }
-
+    // MARK: - Public API
     func setItems(_ newItems: [VideoRecommendation]) {
         let sig = newItems.map { "\($0.video_id)" }.joined(separator: ",")
         guard sig != lastItemsSignature else { return }
@@ -108,30 +93,24 @@ final class ReelsPagerViewController: UIViewController,
 
         items = newItems
         collectionView.reloadData()
-        didForceInitialCenter = false
 
         guard !items.isEmpty else { return }
         if !didSetInitial {
             didSetInitial = true
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                if let id = self.activeID,
-                   let idx = self.items.firstIndex(where: { $0.video_id == id }) {
-                    self.centerItem(at: idx)
-                    self.notifyActive(index: idx)
-                }
+                self.scrollTo(index: 0, animated: false)
+                self.collectionView.layoutIfNeeded()
+                self.notifyActive(index: 0) // VM активирует 0-ю
             }
         }
     }
 
     func setActiveVideoID(_ id: Int?) {
+        // не скроллим, только обновляем и приклеиваем, если видно
         self.activeID = id
 
-        guard !isDetailShown else {
-            detachPlayer()
-            return
-        }
-
+        // если id сброшен — обязательно оторвём плеер
         guard let id = id,
               let idx = items.firstIndex(where: { $0.video_id == id }) else {
             detachPlayer()
@@ -140,31 +119,14 @@ final class ReelsPagerViewController: UIViewController,
 
         let ip = IndexPath(item: idx, section: 0)
         if let cell = collectionView.cellForItem(at: ip) as? ReelCell {
-            attachPlayer(to: cell)
+            attachPlayer(to: cell) // приклеиваем ТОЛЬКО после публикации нового activeID
         } else {
+            // Новая активная ячейка ещё не видна — не держим плеер на старой
             detachPlayer()
         }
     }
 
-    func setDetailShown(_ shown: Bool) {
-        isDetailShown = shown
-        if shown {
-            detachPlayer()
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.setActiveVideoID(self.activeID)
-                if self.sharedPlayer.timeControlStatus != .playing {
-                    self.sharedPlayer.play()
-                }
-                if let id = self.activeID,
-                   let idx = self.items.firstIndex(where: { $0.video_id == id }) {
-                    self.centerItem(at: idx)
-                }
-            }
-        }
-    }
-
+    // MARK: - DataSource
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int { items.count }
 
     func collectionView(_ collectionView: UICollectionView,
@@ -180,7 +142,7 @@ final class ReelsPagerViewController: UIViewController,
                         willDisplay cell: UICollectionViewCell,
                         forItemAt indexPath: IndexPath) {
         guard let reel = cell as? ReelCell else { return }
-        guard !isDetailShown else { return }
+        // клеим только если уже знаем, что именно ЭТА ячейка активна
         if let activeID, items[indexPath.item].video_id == activeID {
             attachPlayer(to: reel)
         }
@@ -194,6 +156,7 @@ final class ReelsPagerViewController: UIViewController,
         }
     }
 
+    // MARK: - Scroll events
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) { updateActiveIfNeeded(force: true) }
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateActiveIfNeeded(force: true) }
@@ -206,10 +169,12 @@ final class ReelsPagerViewController: UIViewController,
 
         if force || currentCenteredIndex != index {
             currentCenteredIndex = index
+            // ВАЖНО: только сообщаем VM. Никаких attach здесь!
             notifyActive(index: index)
         }
     }
 
+    /// Выбираем ячейку, которая больше всего перекрывает видимую область (устойчиво к «чуть видна снизу»).
     private func dominantVisibleIndex() -> Int? {
         guard let cv = collectionView else { return nil }
         let visibleRect = CGRect(origin: cv.contentOffset, size: cv.bounds.size)
@@ -236,29 +201,7 @@ final class ReelsPagerViewController: UIViewController,
                                     animated: animated)
     }
 
-    private func centerItem(at index: Int) {
-        guard index >= 0, index < items.count else { return }
-        collectionView.layoutIfNeeded()
-        let ip = IndexPath(item: index, section: 0)
-        guard let attrs = collectionView.layoutAttributesForItem(at: ip) else {
-            scrollTo(index: index, animated: false)
-            return
-        }
-        let mid = collectionView.bounds.height / 2
-        let targetY = attrs.center.y - mid
-        let minY = -collectionView.contentInset.top
-        let maxY = max(minY, collectionView.contentSize.height - collectionView.bounds.height + collectionView.contentInset.bottom)
-        let clampedY = min(max(targetY, minY), maxY)
-        collectionView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: false)
-    }
-
-    @objc private func handleTap(_ gr: UITapGestureRecognizer) {
-        guard gr.state == .ended else { return }
-        guard let idx = dominantVisibleIndex(),
-              let activeID, items[idx].video_id == activeID else { return }
-        onTapActive?()
-    }
-
+    // MARK: - Приклейка плеера к ячейке
     private func attachPlayer(to cell: ReelCell) {
         guard currentHostCell !== cell else { return }
         detachPlayer()

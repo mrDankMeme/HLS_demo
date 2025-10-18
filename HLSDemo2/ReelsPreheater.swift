@@ -2,12 +2,11 @@
 //  ReelsPreheater.swift
 //  HLSDemo2
 //
-//  Created by Niiaz Khasanov on 10/17/25.
+//  Updated by Niiaz Khasanov on 10/18/25
 //
 
 import Foundation
 import AVFoundation
-
 
 final class ReelsPreheater {
     private var cache: [Int: AVURLAsset] = [:]
@@ -15,19 +14,31 @@ final class ReelsPreheater {
     private let maxItems: Int = 6
     private let queue = DispatchQueue(label: "reels.preheater")
 
+    private let segmentPrefetcher = HLSSegmentPrefetcher.shared
+
     func asset(for videoID: Int) -> AVURLAsset {
-        if let a = cache[videoID] { return a }
+        if let a = cache[videoID] {
+            print("🎯 asset cache HIT (memory) videoID=\(videoID)")
+            return a
+        }
         let url = InteresnoAPI.hlsPlaylistURL(videoID: videoID)
-        let asset = AVURLAsset(url: url)
+        let asset = AVURLAsset(url: url, options: [
+            "AVURLAssetHTTPHeaderFieldsKey": [
+                "User-Agent": "HLSDemo2/1.0 (iOS)",
+                "Accept": "application/vnd.apple.mpegurl, application/x-mpegURL, */*"
+            ]
+        ])
         cache[videoID] = asset
         order.append(videoID)
         trimIfNeeded()
-        asset.loadValuesAsynchronously(forKeys: ["playable"]) {
-            var error: NSError?
-            _ = asset.statusOfValue(forKey: "playable", error: &error)
-            if let error { print("🔮 preheat playable error:", error.localizedDescription) }
-        }
+        asset.loadValuesAsynchronously(forKeys: ["playable"]) { }
+        print("➕ asset cache MISS -> stored videoID=\(videoID)")
         return asset
+    }
+
+    func prefetchCurrent(videoID: Int) {
+        let url = InteresnoAPI.hlsPlaylistURL(videoID: videoID)
+        segmentPrefetcher.prefetchFirstSeconds(from: url, seconds: 60)
     }
 
     func warmNeighbors(currentIndex: Int, items: [VideoRecommendation]) {
@@ -37,6 +48,8 @@ final class ReelsPreheater {
             guard let self else { return }
             for i in indices {
                 let id = items[i].video_id
+                let url = InteresnoAPI.hlsPlaylistURL(videoID: id)
+                self.segmentPrefetcher.prefetchFirstSeconds(from: url, seconds: 60)
                 _ = self.asset(for: id)
             }
         }
@@ -46,6 +59,7 @@ final class ReelsPreheater {
         while order.count > maxItems {
             let removeID = order.removeFirst()
             cache.removeValue(forKey: removeID)
+            print("🧹 asset cache EVICT videoID=\(removeID)")
         }
     }
 }
