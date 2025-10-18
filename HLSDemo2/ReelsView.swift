@@ -70,6 +70,7 @@ struct ReelsView: View {
                             .id(idx)
                         }
                     }
+                    .padding(.top, 0)
                     .scrollTargetLayout()
                 }
                 .scrollIndicators(.hidden)
@@ -99,7 +100,6 @@ struct ReelsView: View {
                     await vm.load()
                     if !vm.items.isEmpty {
                         didSetInitial = true
-                        // установим позицию на активный элемент (если уже есть)
                         if let id = vm.activeVideoID,
                            let idx = vm.items.firstIndex(where: { $0.video_id == id }) {
                             scrollID = idx
@@ -113,7 +113,6 @@ struct ReelsView: View {
                 .onAppear {
                     if let id = vm.activeVideoID,
                        let idx = vm.items.firstIndex(where: { $0.video_id == id }) {
-                        // только если биндинг ушёл в nil/сбился — вернём на место
                         if scrollID != idx {
                             scrollID = idx
                         }
@@ -124,6 +123,13 @@ struct ReelsView: View {
                 pendingActivation?.cancel()
                 if !isShowingDetail { vm.player.pause() }
             }
+
+            // убираем навбар полностью (современный способ)
+            .toolbar(.hidden, for: .navigationBar)
+
+            // для iOS 16 fallback
+            .navigationBarHidden(true)
+
             .navigationTitle("Reels")
             .animation(.easeOut(duration: 0.22), value: scrollID)
         }
