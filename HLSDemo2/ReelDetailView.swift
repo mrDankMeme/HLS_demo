@@ -17,8 +17,7 @@ struct ReelDetailView: View {
 
     var body: some View {
         ZStack {
-            
-            // Видео фон
+            // 🎥 Видео фон
             PlayerLayerView(player: sharedPlayer)
                 .ignoresSafeArea()
                 .onAppear {
@@ -29,7 +28,7 @@ struct ReelDetailView: View {
                     sharedPlayer.isMuted = true
                 }
 
-            // Основной контент
+            // 🧭 Основной контент
             VStack {
                 // 🔝 Кнопки навигации (поверх всего)
                 HStack {
@@ -62,7 +61,9 @@ struct ReelDetailView: View {
                 }
                 .padding(.top, 0)
                 .zIndex(10)
+
                 Spacer(minLength: 0)
+
                 VStack {
                     topSection
                     Spacer()
@@ -78,8 +79,6 @@ struct ReelDetailView: View {
                     .ignoresSafeArea(edges: .bottom)
                 )
             }
-
-           
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -172,7 +171,7 @@ struct ReelDetailView: View {
         }
     }
 
-    // 👇 исправлено: всё по горизонтали, без вертикальных переносов
+    // 👇 горизонтальные реакции
     private var reactionsBlock: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
@@ -217,6 +216,7 @@ struct ReelDetailView: View {
         .padding(.horizontal, 20)
     }
 
+    // MARK: - Аватар с изображением
     private var avatarBlock: some View {
         ZStack(alignment: .bottom) {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
@@ -224,6 +224,13 @@ struct ReelDetailView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(Color.white.opacity(0.18))
+                        .overlay(
+                            avatarImage
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 116, height: 152)
+                                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        )
                 )
                 .frame(width: 116, height: 152)
 
@@ -236,6 +243,11 @@ struct ReelDetailView: View {
                 .clipShape(Capsule())
                 .offset(y: 10)
         }
+    }
+
+    // MARK: - Изображение для аватара (локально или из сети)
+    private var avatarImage: Image {
+        Image("avatar_sample") // Добавь avatar_sample в Assets.xcassets
     }
 
     // MARK: Safe area

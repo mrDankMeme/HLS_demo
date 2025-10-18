@@ -177,15 +177,28 @@ struct ReelCardView: View {
     }
 
     // MARK: - Аватар
+
     private var avatarBlock: some View {
         ZStack(alignment: .bottom) {
+            // 🟦 Внешняя рамка + фон
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(.white.opacity(0.95), lineWidth: 4)
                 .background(
+                    // Внутренний контент (аватар или плейсхолдер)
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(Color.white.opacity(0.18))
+                        .overlay(
+                            // 👉 сюда добавляем аватар
+                            avatarImage
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 116, height: 152)
+                                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        )
                 )
                 .frame(width: 116, height: 152)
+
+            // 🟥 Метка Live
             Text("Live")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(.white)
@@ -197,4 +210,11 @@ struct ReelCardView: View {
         }
         .padding(.bottom, 12)
     }
+
+    // MARK: - Изображение для аватара
+    private var avatarImage: Image {
+        // Можно заменить на AsyncImage(url:) если аватар приходит по URL
+        Image("avatar_sample") // 🔹 добавь картинку в Assets.xcassets
+    }
+
 }
