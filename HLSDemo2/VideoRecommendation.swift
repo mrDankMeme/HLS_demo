@@ -6,8 +6,7 @@
 //
 
 import Foundation
-
-public struct VideoRecommendation: Identifiable, Decodable {
+public struct VideoRecommendation: Identifiable, Decodable, Hashable {
     public var id: Int { video_id }
     public let video_id: Int
     public let title: String

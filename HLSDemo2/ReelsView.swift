@@ -2,9 +2,7 @@
 //  ReelsView.swift
 //  HLSDemo2
 //
-//  Пейджинг без «сползания»: страница = карточка + 20pt, карточка по центру.
-//  Автоплей стартует через 2 сек. после приземления страницы.
-//  iOS 17+
+//  Created by Niiaz Khasanov on 10/17/25.
 //
 
 import SwiftUI
@@ -14,18 +12,19 @@ import AVFoundation
 struct ReelsView: View {
     @StateObject private var vm: ReelsViewModel
 
-    // Настройки
+    // Геометрия карточек
     private let heightRatio: CGFloat = 0.65
     private let hPad: CGFloat = 34
-    private let interItemGap: CGFloat = 20   // расстояние между карточками
+    private let interItemGap: CGFloat = 20
 
-    // Текущая страница
+    // Пейджинг
     @State private var scrollID: Int? = 0
     @State private var didSetInitial = false
-
-    // Таймер отложенной активации
     @State private var pendingActivation: Task<Void, Never>? = nil
     private let autoplayDelay: Duration = .seconds(1)
+
+    // ⚠️ флаг, чтобы не останавливать плеер при переходе на деталку
+    @State private var isShowingDetail = false
 
     init() {
         let http = DefaultHTTPClient()
@@ -34,96 +33,98 @@ struct ReelsView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let screenH = proxy.size.height
-            let cardH   = floor(screenH * heightRatio)
-            let pageH   = cardH + interItemGap
-            let margins = max(0, (screenH - pageH) / 2)
+        NavigationStack {
+            GeometryReader { proxy in
+                let screenH = proxy.size.height
+                let cardH   = floor(screenH * heightRatio)
+                let pageH   = cardH + interItemGap
+                let margins = max(0, (screenH - pageH) / 2)
 
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
-                    ForEach(0..<vm.items.count, id: \.self) { idx in
-                        let m = vm.items[idx]
-                        let active = (vm.activeVideoID == m.video_id)
-                        let preview: URL? = m.preview_image.flatMap { URL(string: $0) }
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(vm.items.enumerated()), id: \.element.id) { idx, m in
+                            let active = (vm.activeVideoID == m.video_id)
+                            let preview = m.preview_image.flatMap(URL.init(string:))
 
-                        ZStack {
-                            ReelCardView(
-                                index: idx,
-                                isActive: active,
-                                title: m.title,
-                                previewURL: preview,
-                                player: vm.player
-                            )
-                            .frame(height: cardH)
-                            .padding(.horizontal, hPad)
-                            .modifier(ActiveHighlight(isActive: active))
+                            // навигация в деталку: выставляем флаг, чтобы не паузить плеер
+                            NavigationLink {
+                                ReelDetailView(video: m, sharedPlayer: vm.player)
+                                    .onAppear { isShowingDetail = true }
+                                    .onDisappear { isShowingDetail = false }
+                            } label: {
+                                ReelCardView(
+                                    index: idx,
+                                    isActive: active,
+                                    title: m.title,
+                                    previewURL: preview,
+                                    player: vm.player
+                                )
+                                .frame(height: cardH)
+                                .padding(.horizontal, hPad)
+                                .modifier(ActiveHighlight(isActive: active))
+                            }
+                            .buttonStyle(.plain)
+                            .frame(height: pageH)
+                            .id(idx)
                         }
-                        .frame(height: pageH)
-                        .id(idx)
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollIndicators(.hidden)
+                .scrollTargetBehavior(.paging)
+                .scrollPosition(id: $scrollID, anchor: .center)
+                .contentMargins(.vertical, margins, for: .scrollContent)
+                .background(Color.black.ignoresSafeArea())
+
+                // отложенная активация нового видео после скролла
+                .onChange(of: scrollID) { _, new in
+                    guard let new, new >= 0, new < vm.items.count else { return }
+                    vm.player.pause()
+                    pendingActivation?.cancel()
+                    pendingActivation = Task { @MainActor in
+                        try? await Task.sleep(for: autoplayDelay)
+                        if new == scrollID {
+                            vm.setActive(videoID: vm.items[new].video_id, mute: true)
+                        }
                     }
                 }
-                .scrollTargetLayout()
-            }
-            .scrollIndicators(.hidden)
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $scrollID, anchor: .center)
-            .contentMargins(.vertical, margins, for: .scrollContent)
-            .background(Color.black.ignoresSafeArea())
 
-            // ❗️Отложенная активация плеера после приземления страницы
-            .onChange(of: scrollID) { _, new in
-                guard let new, new >= 0, new < vm.items.count else { return }
-
-                // Ставим на паузу текущий плеер и отменяем прошлую задачу
-                vm.player.pause()
-                pendingActivation?.cancel()
-
-                // Планируем автоплей через 2 секунды
-                pendingActivation = Task { @MainActor in
-                    try? await Task.sleep(for: autoplayDelay)
-                    // если пользователь не перелистнул ещё раз — активируем
-                    if new == scrollID {
-                        vm.setActive(videoID: vm.items[new].video_id, mute: true)
-                    }
-                }
-            }
-
-            // начальная позиция — после первой раскладки
-            .onChange(of: vm.items.count) { _, count in
-                guard count > 0, !didSetInitial else { return }
-                DispatchQueue.main.async {
-                    didSetInitial = true
-                    scrollID = 0
-                    // стартуем тоже с задержкой через onChange(scrollID)
-                }
-            }
-            .task {
-                setupAudio()
-                await vm.load()
-                if !vm.items.isEmpty {
+                // первая загрузка
+                .onChange(of: vm.items.count) { _, count in
+                    guard count > 0, !didSetInitial else { return }
                     DispatchQueue.main.async {
                         didSetInitial = true
                         scrollID = 0
                     }
                 }
+                .task {
+                    setupAudio()
+                    await vm.load()
+                    if !vm.items.isEmpty {
+                        DispatchQueue.main.async {
+                            didSetInitial = true
+                            scrollID = 0
+                        }
+                    }
+                }
             }
+            .onDisappear {
+                pendingActivation?.cancel()
+                // ❗️не останавливаем плеер, если мы просто ушли на экран деталки
+                if !isShowingDetail {
+                    vm.player.pause()
+                }
+            }
+            .navigationTitle("Reels")
+            .animation(.easeOut(duration: 0.22), value: scrollID)
         }
-        .onDisappear {
-            pendingActivation?.cancel()
-            vm.player.pause()
-        }
-        .navigationTitle("Reels")
-        .animation(.easeOut(duration: 0.22), value: scrollID)
     }
 
     private func setupAudio() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("AudioSession error:", error)
-        }
+        } catch { print("AudioSession error:", error) }
     }
 }
 

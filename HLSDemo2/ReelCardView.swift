@@ -24,13 +24,13 @@ struct ReelCardView: View {
         GeometryReader { geo in
             Group {
                 if isActive {
-                    VideoPlayer(player: player)
-                        .allowsHitTesting(false)
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .clipped()
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .overlay(gradientsOverlay)
-                        .overlay(contentOverlay)
+                    PlayerLayerView(player: player) // было: VideoPlayer(player: player)
+                           .allowsHitTesting(false)
+                           .frame(width: geo.size.width, height: geo.size.height)
+                           .clipped() // обрежет «лишнее» при fill
+                           .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                           .overlay(gradientsOverlay)
+                           .overlay(contentOverlay)
                 } else {
                     AsyncImage(url: previewURL) { phase in
                         switch phase {
